@@ -9,7 +9,10 @@ static void pca9685_write8(uint8_t reg, uint8_t value) {
   Wire.beginTransmission(SERVO_I2C_ADDR);
   Wire.write(reg);
   Wire.write(value);
-  Wire.endTransmission();
+  uint8_t err = Wire.endTransmission();
+  if (err != 0) {
+    Serial.printf("I2C write err reg=0x%02X val=0x%02X err=%d\n", reg, value, err);
+  }
 }
 
 static uint8_t pca9685_read8(uint8_t reg) {
@@ -21,7 +24,16 @@ static uint8_t pca9685_read8(uint8_t reg) {
 }
 
 void servo_pca9685_init() {
+  Serial.println("PCA9685: initializing I2C...");
   Wire.begin(SERVO_SDA_PIN, SERVO_SCL_PIN);
+  Wire.setClock(100000);
+
+  uint8_t scan_err = Wire.endTransmission();
+  Serial.printf("PCA9685: SDA=%d SCL=%d addr=0x%02X\n", SERVO_SDA_PIN, SERVO_SCL_PIN, SERVO_I2C_ADDR);
+
+  Wire.beginTransmission(SERVO_I2C_ADDR);
+  scan_err = Wire.endTransmission();
+  Serial.printf("PCA9685: device scan result: %s\n", scan_err == 0 ? "FOUND" : "NOT FOUND");
 
   pca9685_write8(PCA9685_MODE1, 0x00);
 
@@ -30,8 +42,11 @@ void servo_pca9685_init() {
   prescale /= (float)SERVO_FREQ;
   prescale -= 1.0;
   uint8_t prescale_val = (uint8_t)prescale;
+  Serial.printf("PCA9685: prescale=%d (target %dHz)\n", prescale_val, SERVO_FREQ);
 
   uint8_t old_mode = pca9685_read8(PCA9685_MODE1);
+  Serial.printf("PCA9685: MODE1 before=0x%02X\n", old_mode);
+
   uint8_t new_mode = (old_mode & 0x7F) | 0x10;
   pca9685_write8(PCA9685_MODE1, new_mode);
   pca9685_write8(PCA9685_PRESCALE, prescale_val);
@@ -39,7 +54,11 @@ void servo_pca9685_init() {
   delay(5);
   pca9685_write8(PCA9685_MODE1, old_mode | 0xA0);
 
+  uint8_t mode_after = pca9685_read8(PCA9685_MODE1);
+  Serial.printf("PCA9685: MODE1 after=0x%02X\n", mode_after);
+
   servo_pca9685_off();
+  Serial.println("PCA9685: init done");
 }
 
 void servo_pca9685_set(uint8_t channel, uint16_t pulse) {

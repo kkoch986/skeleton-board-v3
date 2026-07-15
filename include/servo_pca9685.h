@@ -3,8 +3,8 @@
 
 #include <Arduino.h>
 
-#define SERVO_SDA_PIN 4
-#define SERVO_SCL_PIN 5
+#define SERVO_SDA_PIN 3
+#define SERVO_SCL_PIN 4
 #define SERVO_I2C_ADDR 0x40
 
 #define SERVO_MIN_PULSE 102   // ~500us  (0 degrees)
