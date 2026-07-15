@@ -2,6 +2,10 @@
 #include "status_led.h"
 #include "envelope_detect.h"
 #include "board_id.h"
+#include "servo_pca9685.h"
+
+#define SWEEP_STEP 5
+#define SWEEP_DELAY 20
 
 void setup() {
   Serial.begin(115200);
@@ -10,30 +14,29 @@ void setup() {
   status_led_init();
   envelope_detect_init();
   board_id_init();
+  servo_pca9685_init();
 
-  Serial.println("skeleton-board-v3 test");
+  Serial.println("skeleton-board-v3 servo test");
 
-  status_led_set(0, 255, 0);
+  status_led_set(0, 0, 255);
   delay(300);
   status_led_off();
 }
 
 void loop() {
-  bool connected = envelope_detect_connected();
-  uint8_t brightness = envelope_detect_amplitude();
-  uint8_t board_id = board_id_read();
-
-  static uint32_t last_print = 0;
-  if (millis() - last_print > 100) {
-    Serial.printf("detect=%d brightness=%d board_id=%d (0b%04b)\n",
-                  connected, brightness, board_id, board_id);
-    last_print = millis();
+  for (uint16_t pos = SERVO_MIN_PULSE; pos <= SERVO_MAX_PULSE; pos += SWEEP_STEP) {
+    for (uint8_t ch = 0; ch < SERVO_CHANNELS; ch++) {
+      servo_pca9685_set(ch, pos);
+    }
+    Serial.printf("servo pos %d/%d\n", pos, SERVO_MAX_PULSE);
+    delay(SWEEP_DELAY);
   }
 
-  if (!connected) {
-    status_led_off();
-    return;
+  for (int16_t pos = SERVO_MAX_PULSE; pos >= SERVO_MIN_PULSE; pos -= SWEEP_STEP) {
+    for (uint8_t ch = 0; ch < SERVO_CHANNELS; ch++) {
+      servo_pca9685_set(ch, pos);
+    }
+    Serial.printf("servo pos %d/%d\n", pos, SERVO_MAX_PULSE);
+    delay(SWEEP_DELAY);
   }
-
-  status_led_set(0, brightness, 0);
 }
