@@ -3,8 +3,8 @@
 
 #include <Arduino.h>
 
-#define STATUS_LED_R_PIN 9
-#define STATUS_LED_G_PIN 10
+#define STATUS_LED_R_PIN 10
+#define STATUS_LED_G_PIN 9
 #define STATUS_LED_B_PIN 11
 
 #define STATUS_LED_RESOLUTION 8
