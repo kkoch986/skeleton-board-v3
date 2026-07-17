@@ -1,7 +1,7 @@
 #include "control.h"
 #include <Arduino.h>
 #include "dmx_rx.h"
-#include "servo_pca9685.h"
+#include "servo_config.h"
 #include "eye_control.h"
 #include "config.h"
 #include "status_led.h"
@@ -10,6 +10,8 @@ static uint32_t last_eye = 0;
 static bool eye_on = false;
 
 void control_init() {
+  servo_config_init();
+
   eye_init(EYE_DEFAULT_ADDR);
   if (eye_probe(EYE_DEFAULT_ADDR)) {
     Serial.println("Eye board found");
@@ -21,6 +23,8 @@ void control_init() {
 }
 
 void control_update() {
+  servo_config_update();
+
   if (!dmx_rx_frame_ready()) return;
 
   status_led_set(0, 255, 0);
@@ -30,9 +34,12 @@ void control_update() {
   uint8_t servo_ch = dmx_rx_get(offset) >> 4;
   uint8_t eye_cmd = dmx_rx_get(offset + 1);
 
-  if (servo_ch < SERVO_CHANNELS) {
-    uint16_t pulse = map(dmx_rx_get(offset + 2), 0, 255, SERVO_MIN_PULSE, SERVO_MAX_PULSE);
-    servo_pca9685_set(servo_ch, pulse);
+  if (servo_ch < SERVO_NUM_CHANNELS) {
+    servo_cfg_t *cfg = servo_config_get(servo_ch);
+    if (cfg->enabled) {
+      uint16_t pulse = map(dmx_rx_get(offset + 2), 0, 255, cfg->lower_limit, cfg->upper_limit);
+      servo_config_set_target(servo_ch, pulse);
+    }
   }
 
   if (millis() - last_eye > 500) {
