@@ -14,6 +14,7 @@ static WiFiServer server(TELNET_PORT);
 static WiFiClient client;
 static char cmd_buf[128];
 static uint8_t cmd_len = 0;
+static uint8_t iac_skip = 0;
 
 static void cmd_help() {
   client.println("commands:");
@@ -32,6 +33,11 @@ static void cmd_help() {
   client.println("  servo <ch> disable      disable servo");
   client.println("  servo <ch> label <str>  set label");
   client.println("  servo <ch> save         save config to flash");
+  client.println("  power                  show servo power state");
+  client.println("  power <1|2> on         enable servo power bank");
+  client.println("  power <1|2> off        disable servo power bank");
+  client.println("  power all on           enable both power banks");
+  client.println("  power all off          disable both power banks");
   client.println("  led <r> <g> <b>         set status led (0-255)");
   client.println("  restart                 reboot device");
 }
@@ -134,6 +140,32 @@ static void cmd_process(const char *cmd) {
       while (*args == ' ') args++;
       cmd_servo(ch, args);
     }
+  } else if (strncmp(cmd, "power", 5) == 0) {
+    const char *args = cmd + 5;
+    while (*args == ' ') args++;
+
+    if (strcmp(args, "all on") == 0) {
+      servo_power_enable_all(true);
+      client.println("power: both banks ON");
+    } else if (strcmp(args, "all off") == 0) {
+      servo_power_enable_all(false);
+      client.println("power: both banks OFF");
+    } else if (strncmp(args, "1 ", 2) == 0) {
+      const char *a = args + 2;
+      if (strcmp(a, "on") == 0) { servo_power_enable(0, true); client.println("power 1: ON"); }
+      else if (strcmp(a, "off") == 0) { servo_power_enable(0, false); client.println("power 1: OFF"); }
+      else { client.println("usage: power <1|2> <on|off>"); }
+    } else if (strncmp(args, "2 ", 2) == 0) {
+      const char *a = args + 2;
+      if (strcmp(a, "on") == 0) { servo_power_enable(1, true); client.println("power 2: ON"); }
+      else if (strcmp(a, "off") == 0) { servo_power_enable(1, false); client.println("power 2: OFF"); }
+      else { client.println("usage: power <1|2> <on|off>"); }
+    } else if (strlen(args) == 0) {
+      client.printf("power 1: %s\n", digitalRead(SERVO_POWER_BANK0_PIN) ? "ON" : "OFF");
+      client.printf("power 2: %s\n", digitalRead(SERVO_POWER_BANK1_PIN) ? "ON" : "OFF");
+    } else {
+      client.println("usage: power [all|1|2] [on|off]");
+    }
   } else if (strncmp(cmd, "led ", 4) == 0) {
     uint8_t r = 0, g = 0, b = 0;
     sscanf(cmd + 4, "%hhu %hhu %hhu", &r, &g, &b);
@@ -157,24 +189,44 @@ void telnet_update() {
   if (!client || !client.connected()) {
     client = server.available();
     if (client) {
+      iac_skip = 0;
+      cmd_len = 0;
       client.println("\nskeleton-board-v3 telnet");
       client.println("type 'help' for commands");
       client.print("> ");
-      cmd_len = 0;
     }
     return;
   }
 
   while (client.available()) {
     char c = client.read();
-    if (c == '\n' || c == '\r') {
+
+    if (iac_skip > 0) {
+      iac_skip--;
+      continue;
+    }
+
+    if (c == '\r') {
+      continue;
+    }
+
+    if (c == '\n') {
       if (cmd_len > 0) {
         cmd_buf[cmd_len] = '\0';
         cmd_process(cmd_buf);
         cmd_len = 0;
       }
       client.print("> ");
-    } else if (cmd_len < sizeof(cmd_buf) - 1) {
+      continue;
+    }
+
+    if (c == '\xff') {
+      iac_skip = 2;
+      cmd_len = 0;
+      continue;
+    }
+
+    if (c >= 0x20 && c <= 0x7e && cmd_len < sizeof(cmd_buf) - 1) {
       cmd_buf[cmd_len++] = c;
     }
   }
