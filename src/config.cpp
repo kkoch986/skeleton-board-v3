@@ -3,6 +3,7 @@
 #include <WiFiManager.h>
 #include <Preferences.h>
 #include "status_led.h"
+#include "board_id.h"
 #include "telnet.h"
 
 static WiFiManager wm;
@@ -26,12 +27,14 @@ static void save_params_callback() {
 }
 
 static void config_portal_run() {
-  Serial.println("WiFi: starting config portal...");
-  status_led_set(0, 0, 255);
-  wm.setConfigPortalTimeout(CFGPortal_TIMEOUT);
+  char ap_name[32];
+  snprintf(ap_name, sizeof(ap_name), "%s-%u", CFG_AP_NAME, board_id_read());
 
-  if (!wm.startConfigPortal(CFG_AP_NAME, CFG_AP_PASSWORD)) {
-    Serial.println("WiFi: config portal timeout");
+  Serial.printf("WiFi: connecting (hold button for config portal)...\n");
+  status_led_set(0, 0, 255);
+
+  if (!wm.autoConnect(ap_name, CFG_AP_PASSWORD)) {
+    Serial.println("WiFi: failed to connect");
     status_led_off();
     return;
   }
