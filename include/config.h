@@ -11,11 +11,15 @@
 
 void config_init();
 void config_update();
+void config_enable_wifi();
 bool config_wifi_enabled();
+void config_set_debug(bool on);
+bool config_get_debug();
 bool config_wifi_connected();
 
 const char *config_get_ssid();
 const char *config_get_pass();
 uint16_t config_get_dmx_offset();
+bool config_set_dmx_offset(uint16_t offset);
 
 #endif
