@@ -13,6 +13,7 @@ typedef struct {
   uint16_t center;
   uint8_t  smoothing;
   bool     enabled;
+  bool     invert;
   char     label[SERVO_LABEL_LEN];
 } servo_cfg_t;
 
@@ -20,6 +21,7 @@ typedef struct {
   uint16_t current;
   uint16_t target;
   bool     arrived;
+  bool     manual;
 } servo_state_t;
 
 void     servo_config_init();
@@ -34,5 +36,7 @@ servo_state_t *servo_state_get(uint8_t ch);
 
 void     servo_config_set_target(uint8_t ch, uint16_t target);
 uint16_t servo_config_apply_limits(uint8_t ch, uint16_t value);
+void     servo_config_begin_first_ramp();
+void     servo_config_set_ramp_exempt(int8_t ch);
 
 #endif
