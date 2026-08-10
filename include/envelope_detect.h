@@ -15,5 +15,10 @@
 void envelope_detect_init();
 bool envelope_detect_connected();
 uint16_t envelope_detect_amplitude();
+uint16_t envelope_detect_amplitude_raw();
+void envelope_detect_set_gain(uint16_t gain);
+uint16_t envelope_detect_get_gain();
+void envelope_detect_set_smoothing(uint8_t smoothing);
+uint8_t envelope_detect_get_smoothing();
 
 #endif
