@@ -21,10 +21,10 @@ void setup() {
   Serial.printf("Board ID: %u\n", board_id_read());
 
   servo_pca9685_init();
-  servo_power_enable_all(true);
 
   dmx_rx_init();
   control_init();
+  config_init();
 
   Serial.println("skeleton-board-v3 ready (press boot button for WiFi config)");
   status_init();

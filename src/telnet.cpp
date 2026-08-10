@@ -33,11 +33,8 @@ static void cmd_help() {
   client.println("  servo <ch> disable      disable servo");
   client.println("  servo <ch> label <str>  set label (max 15 chars)");
   client.println("  servo <ch> save         save config to flash");
-  client.println("  power                  show servo power state");
-  client.println("  power <1|2> on         enable servo power bank");
-  client.println("  power <1|2> off        disable servo power bank");
-  client.println("  power all on           enable both power banks");
-  client.println("  power all off          disable both power banks");
+  client.println("  servo all on            enable all servo outputs (OE LOW)");
+  client.println("  servo all off           disable all servo outputs (OE HIGH)");
   client.println("  led <r> <g> <b>         set status led (0-255)");
   client.println("  restart                 reboot device");
 }
@@ -134,6 +131,12 @@ static void cmd_process(const char *cmd) {
 
     if (strlen(args) == 0) {
       cmd_servo_table();
+    } else if (strncmp(args, "all", 3) == 0) {
+      const char *a = args + 3;
+      while (*a == ' ') a++;
+      if (strcmp(a, "on") == 0) { servo_pca9685_enable(true); client.println("servos: enabled (OE LOW)"); }
+      else if (strcmp(a, "off") == 0) { servo_pca9685_enable(false); client.println("servos: disabled (OE HIGH)"); }
+      else { client.println("usage: servo all <on|off>"); }
     } else {
       uint8_t ch = atoi(args);
       while (*args && *args != ' ') args++;
@@ -141,31 +144,7 @@ static void cmd_process(const char *cmd) {
       cmd_servo(ch, args);
     }
   } else if (strncmp(cmd, "power", 5) == 0) {
-    const char *args = cmd + 5;
-    while (*args == ' ') args++;
-
-    if (strcmp(args, "all on") == 0) {
-      servo_power_enable_all(true);
-      client.println("power: both banks ON");
-    } else if (strcmp(args, "all off") == 0) {
-      servo_power_enable_all(false);
-      client.println("power: both banks OFF");
-    } else if (strncmp(args, "1 ", 2) == 0) {
-      const char *a = args + 2;
-      if (strcmp(a, "on") == 0) { servo_power_enable(0, true); client.println("power 1: ON"); }
-      else if (strcmp(a, "off") == 0) { servo_power_enable(0, false); client.println("power 1: OFF"); }
-      else { client.println("usage: power <1|2> <on|off>"); }
-    } else if (strncmp(args, "2 ", 2) == 0) {
-      const char *a = args + 2;
-      if (strcmp(a, "on") == 0) { servo_power_enable(1, true); client.println("power 2: ON"); }
-      else if (strcmp(a, "off") == 0) { servo_power_enable(1, false); client.println("power 2: OFF"); }
-      else { client.println("usage: power <1|2> <on|off>"); }
-    } else if (strlen(args) == 0) {
-      client.printf("power 1: %s\n", digitalRead(SERVO_POWER_BANK0_PIN) ? "ON" : "OFF");
-      client.printf("power 2: %s\n", digitalRead(SERVO_POWER_BANK1_PIN) ? "ON" : "OFF");
-    } else {
-      client.println("usage: power [all|1|2] [on|off]");
-    }
+    client.println("servo power now via OE pin — use 'servo all <on|off>'");
   } else if (strncmp(cmd, "led ", 4) == 0) {
     uint8_t r = 0, g = 0, b = 0;
     sscanf(cmd + 4, "%hhu %hhu %hhu", &r, &g, &b);
