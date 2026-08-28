@@ -192,6 +192,27 @@ void eye_wifi_forget(void) {
     _send1(EYE_DEFAULT_ADDR, EYE_CMD_WIFI_FORGET);
 }
 
+void eye_display_text(const char *text) {
+    uint8_t addr = EYE_DEFAULT_ADDR;
+    size_t len = strlen(text);
+    if (len > 62) len = 62;
+    uint8_t buf[63] = {EYE_CMD_DISPLAY_TEXT};
+    memcpy(buf + 1, text, len);
+    _transmit(addr, buf, 1 + len);
+}
+
+void eye_clear_text(void) {
+    _send1(EYE_DEFAULT_ADDR, EYE_CMD_CLEAR_TEXT);
+}
+
+void eye_text_color(uint16_t rgb565) {
+    _send3(EYE_DEFAULT_ADDR, EYE_CMD_TEXT_COLOR, rgb565 & 0xFF, (rgb565 >> 8) & 0xFF);
+}
+
+void eye_text_bg(uint16_t rgb565) {
+    _send3(EYE_DEFAULT_ADDR, EYE_CMD_TEXT_BG, rgb565 & 0xFF, (rgb565 >> 8) & 0xFF);
+}
+
 uint8_t eye_wifi_status(void) {
     _send1(EYE_DEFAULT_ADDR, EYE_CMD_WIFI_STATUS);
     uint8_t buf[1];

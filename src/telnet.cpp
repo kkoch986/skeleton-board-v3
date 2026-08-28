@@ -59,6 +59,10 @@ static void cmd_help() {
   client.println("  eye smooth <0-255>      set eye smoothing");
   client.println("  eye mode <0|1|2>       set eye mode (0=normal,1=sprite)");
   client.println("  eye spriteix <id>       set sprite index");
+  client.println("  eye text <string>       display text on eye screen");
+  client.println("  eye text off            clear text");
+  client.println("  eye text color <r><g><b> set text color (0-255 each)");
+  client.println("  eye text bg <r><g><b>   set text background color");
   client.println("  eye reset               reset eye board");
   client.println("  eye wifi ssid <ssid>    set eye wifi ssid");
   client.println("  eye wifi pass <pass>    set eye wifi password");
@@ -377,6 +381,25 @@ static void cmd_eye(const char *args) {
   } else if (strcmp(args, "reset") == 0) {
     eye_reset();
     client.println("eye reset");
+  } else if (strncmp(args, "text ", 5) == 0) {
+    const char *t = args + 5;
+    if (strncmp(t, "off", 3) == 0) {
+      eye_clear_text();
+      client.println("eye text: cleared");
+    } else if (strncmp(t, "color ", 6) == 0) {
+      uint8_t r = 0, g = 0, b = 0;
+      sscanf(t + 6, "%hhu %hhu %hhu", &r, &g, &b);
+      eye_text_color(rgb565(r, g, b));
+      client.printf("eye text color %u %u %u\n", r, g, b);
+    } else if (strncmp(t, "bg ", 3) == 0) {
+      uint8_t r = 0, g = 0, b = 0;
+      sscanf(t + 3, "%hhu %hhu %hhu", &r, &g, &b);
+      eye_text_bg(rgb565(r, g, b));
+      client.printf("eye text bg %u %u %u\n", r, g, b);
+    } else {
+      eye_display_text(t);
+      client.printf("eye text: \"%s\"\n", t);
+    }
   } else if (strncmp(args, "wifi ", 5) == 0) {
     const char *w = args + 5;
     if (strncmp(w, "ssid ", 5) == 0) {

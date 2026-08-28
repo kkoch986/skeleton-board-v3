@@ -31,6 +31,10 @@ extern "C" {
 #define EYE_CMD_SPRITE_MODE     0x16
 #define EYE_CMD_GET_MODE        0x17
 #define EYE_CMD_SET_SPRITE      0x18
+#define EYE_CMD_DISPLAY_TEXT    0x19
+#define EYE_CMD_CLEAR_TEXT      0x1A
+#define EYE_CMD_TEXT_COLOR      0x1B
+#define EYE_CMD_TEXT_BG         0x1C
 
 #define EYE_DEFAULT_ADDR        0x42
 #define EYE_SPRITE_NONE         255
@@ -87,6 +91,10 @@ void    eye_wifi_ssid(const char *ssid);
 void    eye_wifi_pass(const char *pass);
 void    eye_wifi_connect(void);
 void    eye_wifi_forget(void);
+void    eye_display_text(const char *text);
+void    eye_clear_text(void);
+void    eye_text_color(uint16_t rgb565);
+void    eye_text_bg(uint16_t rgb565);
 uint8_t eye_wifi_status(void);
 bool    eye_read_status(eye_status_t *status, uint8_t addr);
 uint8_t eye_get_mode(uint8_t addr);
